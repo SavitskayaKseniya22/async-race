@@ -3,7 +3,7 @@ import { CarsPage, Car, WinnersPage, Winner } from "./types";
 export class ApiService {
   link: string;
   constructor() {
-    this.link = "http://127.0.0.1:3000";
+    this.link = "https://async-race-api-seven.vercel.app";
   }
 
   async getAllCars() {
