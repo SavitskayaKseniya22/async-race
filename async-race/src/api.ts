@@ -1,19 +1,16 @@
 import { CarsPage, Car, WinnersPage, Winner } from "./types";
 
-export class ApiService {
-  link: string;
-  constructor() {
-    this.link = "https://async-race-api-seven.vercel.app";
-  }
+class ApiService {
+  static link = "http://127.0.0.1:3000";
 
-  async getAllCars() {
-    const response = await fetch(`${this.link}/garage`);
+  static async getAllCars() {
+    const response = await fetch(`${ApiService.link}/garage`);
     const allCars = (await response.json()) as Car[];
     return allCars;
   }
 
-  async createCar(data: Car = {}) {
-    const response = await fetch(`${this.link}/garage`, {
+  static async createCar(data: Car = {}) {
+    const response = await fetch(`${ApiService.link}/garage`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -24,38 +21,38 @@ export class ApiService {
     return car;
   }
 
-  async deleteCar(id: number) {
-    const response = await fetch(`${this.link}/garage/${id}`, {
+  static async deleteCar(id: number) {
+    const response = await fetch(`${ApiService.link}/garage/${id}`, {
       method: "DELETE",
     });
-    return await response.json();
+    return response.json();
   }
 
-  async deleteWinner(id: number) {
-    const response = await fetch(`${this.link}/winners/${id}`, {
+  static async deleteWinner(id: number) {
+    const response = await fetch(`${ApiService.link}/winners/${id}`, {
       method: "DELETE",
     });
-    return await response.json();
+    return response.json();
   }
 
-  async changeDriveMode(id: number, status: "started" | "stopped" | "drive") {
-    const response = await fetch(`${this.link}/engine?id=${id}&status=${status}`, {
+  static async changeDriveMode(id: number, status: "started" | "stopped" | "drive") {
+    const response = await fetch(`${ApiService.link}/engine?id=${id}&status=${status}`, {
       method: "PATCH",
     });
     const car = await response.json();
     return car;
   }
 
-  async getCar(id: number) {
-    const response = await fetch(`${this.link}/garage/${id}`, {
+  static async getCar(id: number) {
+    const response = await fetch(`${ApiService.link}/garage/${id}`, {
       method: "GET",
     });
     const car = (await response.json()) as Car;
     return car;
   }
 
-  async updateCar(id: number, data: Car = {}) {
-    const response = await fetch(`${this.link}/garage/${id}`, {
+  static async updateCar(id: number, data: Car = {}) {
+    const response = await fetch(`${ApiService.link}/garage/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -66,8 +63,8 @@ export class ApiService {
     return car;
   }
 
-  async getCars(page = 1, limit = 7) {
-    const response = await fetch(`${this.link}/garage?_page=${page}&_limit=${limit}`, {
+  static async getCars(page = 1, limit = 7) {
+    const response = await fetch(`${ApiService.link}/garage?_page=${page}&_limit=${limit}`, {
       method: "GET",
     });
     return {
@@ -78,23 +75,26 @@ export class ApiService {
     } as CarsPage;
   }
 
-  async getWinners(page = 1, limit = 10, sort = "id", order = "ASC") {
-    const response = await fetch(`${this.link}/winners?_page=${page}&_limit=${limit}&_sort=${sort}&_order=${order}`, {
-      method: "GET",
-    });
+  static async getWinners(page = 1, limit = 10, sort = "id", order = "ASC") {
+    const response = await fetch(
+      `${ApiService.link}/winners?_page=${page}&_limit=${limit}&_sort=${sort}&_order=${order}`,
+      {
+        method: "GET",
+      },
+    );
 
     return {
       items: await response.json(),
       count: response.headers.get("X-Total-Count"),
       pageNumber: page,
-      sort: sort,
-      order: order,
+      sort,
+      order,
       pageLimit: Math.ceil(+response.headers.get("X-Total-Count") / limit),
     } as WinnersPage;
   }
 
-  async createWinner(data: Winner = {}) {
-    const response = await fetch(`${this.link}/winners`, {
+  static async createWinner(data: Winner = {}) {
+    const response = await fetch(`${ApiService.link}/winners`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -105,8 +105,8 @@ export class ApiService {
     return car;
   }
 
-  async updateWinner(id: number, data: Winner = {}) {
-    const response = await fetch(`${this.link}/winners/${id}`, {
+  static async updateWinner(id: number, data: Winner = {}) {
+    const response = await fetch(`${ApiService.link}/winners/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -117,8 +117,8 @@ export class ApiService {
     return car;
   }
 
-  async getWinner(id: number) {
-    const response = await fetch(`${this.link}/winners/${id}`, {
+  static async getWinner(id: number) {
+    const response = await fetch(`${ApiService.link}/winners/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -128,10 +128,9 @@ export class ApiService {
     if (response.status === 200) {
       const car = (await response.json()) as Winner;
       return car;
-    } else {
-      return undefined;
     }
+    return undefined;
   }
 }
 
-export const apiService = new ApiService();
+export default ApiService;
