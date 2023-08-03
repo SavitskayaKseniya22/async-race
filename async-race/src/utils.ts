@@ -1,5 +1,3 @@
-import ApiService from "./api";
-
 function getRandomNumber(max: number) {
   const rand = -0.5 + Math.random() * (max + 1);
   return Math.round(rand);
@@ -16,13 +14,16 @@ export function getRandomColor() {
     .join("");
 }
 
-export async function getRandomName() {
-  const carNames = await ApiService.getCarsNames();
-  const carTypeNum = getRandomNumber(Object.keys(carNames).length - 1);
-  const carType = Object.keys(carNames)[carTypeNum];
-  const carNameNum = getRandomNumber(Object.values(carNames)[carTypeNum].length - 1);
-  const carModel = Object.values(carNames)[carTypeNum][carNameNum];
-  return `${carType} ${carModel}`;
+export function getRandomName(carNames: { [x: string]: string[] } | undefined) {
+  if (carNames !== undefined) {
+    const carTypeNum = getRandomNumber(Object.keys(carNames).length - 1);
+    const carType = Object.keys(carNames)[carTypeNum];
+    const carNameNum = getRandomNumber(Object.values(carNames)[carTypeNum].length - 1);
+    const carModel = Object.values(carNames)[carTypeNum][carNameNum];
+    return `${carType} ${carModel}`;
+  }
+
+  return `Car ${getRandomNumber(100000)}`;
 }
 
 export function getTime(v: number, d: number) {

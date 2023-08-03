@@ -59,6 +59,7 @@ class App {
       <a href="./#winners" id="to-winners" class="to-winners button">to winners</a>
     </nav>
     <h2 class="count"><span class="page__title"></span><span class="page__cars-total"></span></h2>
+    <div class="race-result"></div>
     </header>
       <main>
       </main>

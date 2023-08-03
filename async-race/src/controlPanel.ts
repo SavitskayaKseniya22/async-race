@@ -1,6 +1,7 @@
 import ApiService from "./api";
 import CarModel from "./car";
 import Garage from "./garage";
+import Page from "./modules/Page";
 import Settings from "./modules/Settings";
 import { Car, Winner } from "./types";
 import { getRandomName, getRandomColor } from "./utils";
@@ -13,7 +14,14 @@ class ControlPanel {
         const { target } = event;
         if (target instanceof HTMLInputElement) {
           if (target.classList.contains("create-name") && target.value === "") {
-            target.value = await getRandomName();
+            let carNames: { [x: string]: string[] } | undefined;
+            try {
+              carNames = await ApiService.getCarsNames();
+            } catch (error) {
+              console.error(error);
+            } finally {
+              target.value = getRandomName(carNames);
+            }
           }
           if (target.classList.contains("create-color")) {
             target.value = getRandomColor();
@@ -46,9 +54,9 @@ class ControlPanel {
         } else if (target.closest(".remove-all")) {
           ControlPanel.removeAllCar(target);
         } else if (target.closest(".race-all")) {
-          // ControlPanel.race(target);
+          ControlPanel.race(target);
         } else if (target.closest(".reset-all")) {
-          // ControlPanel.resetAllCar();
+          ControlPanel.resetAllCar();
         }
       }
     });
@@ -86,13 +94,19 @@ class ControlPanel {
 
   static async generateCars(amount: number) {
     const arrayOfCars = new Array(amount).fill(undefined);
-    await Promise.allSettled(
-      arrayOfCars.map(async () => {
-        const name = await getRandomName();
-        const car = await ApiService.createCar({ name, color: getRandomColor() });
-        return car;
-      }),
-    );
+    let carNames: { [x: string]: string[] } | undefined;
+    try {
+      carNames = await ApiService.getCarsNames();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      await Promise.allSettled(
+        arrayOfCars.map(async () => {
+          const car = await ApiService.createCar({ name: getRandomName(carNames), color: getRandomColor() });
+          return car;
+        }),
+      );
+    }
   }
 
   static async generateCarView(target: HTMLElement, amount: number) {
@@ -102,50 +116,20 @@ class ControlPanel {
 
     await Garage.updateGaragePage();
   }
-  /*
-  static printWinnerScreen(name: string, time: number) {
-    const timeInSec = (time / 1000).toFixed(3);
-    const raceResult = document.createElement("div");
-    raceResult.className = "race-result active";
-    raceResult.innerHTML =
-      name !== "no one"
-        ? `<h2>Race is over!</h2>
-<p class="winner-message">&#9733;${name}&#9733;<br> finished first in ${timeInSec} seconds<p>`
-        : `<h2>Race is over!</h2>
-<p class="winner-message">No one finished first<p>`;
-    document.querySelector(".header").append(raceResult);
-  }
-
-  static removeWinnerScreen() {
-    const raceResult = document.querySelector(".race-result");
-    raceResult.remove();
-  }
-
-  static async resetAllCar() {
-    const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.garageLimit);
-    cars.items.map((car: Car) => {
-      const index = cars.items.indexOf(car);
-      return Garage.carCollection[index].stopCar(car.id);
-    });
-    document.querySelector(`.race-all`).removeAttribute("disabled");
-    document.querySelector(`.reset-all`).setAttribute("disabled", "disabled");
-    const stopEngines = document.querySelectorAll(".stopEngine");
-    stopEngines.forEach((element) => {
-      element.setAttribute("disabled", "disabled");
-    });
-  }
 
   static async race(target: HTMLElement) {
-    const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.garageLimit);
+    const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.limit.garage);
 
-    if (cars.items.length >= 2) {
-      blockButton("block", target);
-      const promises = cars.items.map((car: Car) => {
-        const index = cars.items.indexOf(car);
-        return Garage.carCollection[index].drive(car.id);
+    if (cars.length >= 2) {
+      Page.blockButton("block", target);
+
+      const promises = cars.map(async (car: Car) => {
+        const data = await CarModel.drive(car.id);
+        return Object.assign(car, data);
       });
+
       await Promise.any(promises)
-        .then((carResult: Winner) => {
+        .then((carResult) => {
           ControlPanel.updateWinner(carResult);
         })
         .catch(() => {
@@ -154,34 +138,65 @@ class ControlPanel {
         });
 
       await Promise.allSettled(promises);
-      blockButton("unblock", target);
+      Page.blockButton("unblock", target);
     }
   }
 
-  static async updateWinner(carResult: Winner) {
-    const car = await ApiService.getCar(carResult.id);
-    ControlPanel.printWinnerScreen(car.name, carResult.time);
+  static printWinnerScreen(name: string, time: number) {
+    const timeInSec = (time / 1000).toFixed(3);
+    const raceResult = document.querySelector(".race-result");
+    raceResult.classList.add("active");
+
+    raceResult.outerHTML = `<div class="race-result active">
+    ${
+      name !== "no one"
+        ? `<h2>Race is over!</h2>
+<p class="winner-message">&#9733;${name}&#9733;<br> finished first in ${timeInSec} seconds<p>`
+        : `<h2>Race is over!</h2>
+<p class="winner-message">No one finished first<p>`
+    }
+    </div>`;
+  }
+
+  static removeWinnerScreen() {
+    const raceResult = document.querySelector(".race-result");
+    raceResult.classList.remove("active");
+  }
+
+  static async resetAllCar() {
+    const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.limit.garage);
+    cars.map((car: Car) => {
+      return CarModel.stopCar(car.id);
+    });
+
+    document.querySelector(`.race-all`).removeAttribute("disabled");
+    document.querySelector(`.reset-all`).setAttribute("disabled", "disabled");
+    const stopEngines = document.querySelectorAll(".stopEngine");
+    stopEngines.forEach((element) => {
+      element.setAttribute("disabled", "disabled");
+    });
+  }
+
+  static async updateWinner(result: Car) {
+    const { name, time, id } = result;
+    ControlPanel.printWinnerScreen(name, time);
     document.addEventListener("click", ControlPanel.removeWinnerScreen, { once: true });
 
     try {
-      const winner = await ApiService.getWinner(carResult.id);
-      const time = carResult.time < winner.time ? carResult.time : winner.time;
-
-      const data = {
-        wins: winner.wins + 1,
-        time,
-      };
-      ApiService.updateWinner(carResult.id, data);
-    } catch (error) {
-      ApiService.createWinner({
-        id: carResult.id,
-        wins: 1,
-        time: carResult.time,
+      const winners = await ApiService.getAllWinners();
+      const winner = winners.filter((car) => {
+        return car.id === id;
       });
+      if (winner.length) {
+        const updatedTime = time < winner[0].time ? time : winner[0].time;
+        ApiService.updateWinner(id, { wins: winner[0].wins + 1, time: updatedTime });
+      } else {
+        ApiService.createWinner({ id, wins: 1, time });
+      }
+    } catch (error) {
+      ApiService.createWinner({ id, wins: 1, time });
     }
   }
-
-  */
 
   static async removeAllCar(target: HTMLElement) {
     target.classList.add("downloading");
