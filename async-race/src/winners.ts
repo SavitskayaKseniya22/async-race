@@ -12,6 +12,9 @@ class Winners {
     document.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
       if (target.closest(".id") || target.closest(".wins") || target.closest(".time")) {
+        if (target.tagName === "INPUT") {
+          return;
+        }
         Winners.changeSortType(target);
       }
     });
@@ -24,10 +27,11 @@ class Winners {
 
   static changeSortType(target: HTMLElement) {
     const { sort } = Settings;
-    if (sort === target.dataset.sort) {
+    const targetSort = target.getAttribute("data-sort");
+    if (sort === targetSort) {
       Winners.changeOrderType();
     } else {
-      Settings.sort = target.dataset.sort;
+      Settings.sort = targetSort;
     }
 
     Winners.getCarsAndUpdateContainer();
