@@ -1,66 +1,60 @@
-import { getRandomName, getRandomColor, blockButton } from "./utils";
-import { apiService } from "./api";
+import ApiService from "./api";
+import CarModel from "./car";
+import Garage from "./garage";
+import Settings from "./modules/Settings";
 import { Car, Winner } from "./types";
-import { Garage } from "./garage";
-import { Page } from "./page";
+import { getRandomName, getRandomColor } from "./utils";
 
-export class ControlPanel {
-  garage: Garage;
-  currentPage: Page;
-
-  constructor(garage: Garage, currentPage: Page) {
-    this.garage = garage;
-    this.currentPage = currentPage;
-    this.initListener();
-  }
-
-  initListener() {
+class ControlPanel {
+  static initListener() {
     document.addEventListener(
       "focus",
-      (e) => {
-        const target = e.target as HTMLButtonElement;
-        if (target.className === "create-name" && target.value === "") {
-          target.value = getRandomName();
+      async (event) => {
+        const { target } = event;
+        if (target instanceof HTMLInputElement) {
+          if (target.classList.contains("create-name") && target.value === "") {
+            target.value = await getRandomName();
+          }
+          if (target.classList.contains("create-color")) {
+            target.value = getRandomColor();
+          }
         }
       },
       true,
     );
 
-    document.addEventListener("submit", (e) => {
-      const target = e.target as HTMLButtonElement;
-      if (target.className === "create") {
-        e.preventDefault();
-        this.createCarView();
-      } else if (target.className === "update") {
-        e.preventDefault();
-        this.updateCarView();
-        document.querySelector(".update-confirm").setAttribute("disabled", "disabled");
+    document.addEventListener("submit", (event) => {
+      const { target } = event;
+      event.preventDefault();
+      if (target instanceof HTMLElement) {
+        if (target.classList.contains("create")) {
+          CarModel.create();
+        } else if (target.classList.contains("update")) {
+          CarModel.update();
+          document.querySelector(".update-confirm").setAttribute("disabled", "disabled");
+        }
       }
     });
 
-    document.addEventListener("click", (e) => {
-      const target = e.target as HTMLButtonElement;
-      switch (target.className) {
-        case "create-color":
+    document.addEventListener("click", (event) => {
+      const { target } = event;
+      if (target instanceof HTMLButtonElement) {
+        if (target.closest(".create-color")) {
           target.value = getRandomColor();
-          break;
-        case "generate-cars":
-          this.generateCarView(target, 100);
-          break;
-        case "remove-all":
-          this.removeAllCar(target);
-          break;
-        case "race-all":
-          this.race(target);
-          break;
-        case "reset-all":
-          this.resetAllCar();
-          break;
+        } else if (target.closest(".generate-cars")) {
+          ControlPanel.generateCarView(target, 100);
+        } else if (target.closest(".remove-all")) {
+          ControlPanel.removeAllCar(target);
+        } else if (target.closest(".race-all")) {
+          // ControlPanel.race(target);
+        } else if (target.closest(".reset-all")) {
+          // ControlPanel.resetAllCar();
+        }
       }
     });
   }
 
-  printControlPanel() {
+  static content() {
     return `<div class="control-panel">
     <form action="" class="create">
       <input class="create-name" type="text" required placeholder="Enter car name"   />
@@ -81,22 +75,35 @@ export class ControlPanel {
   </div>`;
   }
 
-  async generateCars(amount: number) {
-    let i = 0;
-    while (i < amount) {
-      i++;
-      await apiService.createCar({ name: getRandomName(), color: getRandomColor() });
+  static updateDisability(activePage: "garage" | "winners") {
+    const panel = document.querySelector(".control-panel");
+    if (activePage === "garage") {
+      panel.classList.remove("disabled");
+    } else {
+      panel.classList.add("disabled");
     }
   }
 
-  async generateCarView(target: HTMLElement, amount: number) {
-    target.classList.add("downloading");
-    await this.generateCars(amount);
-    target.classList.remove("downloading");
-    this.garage.updateGarage();
+  static async generateCars(amount: number) {
+    const arrayOfCars = new Array(amount).fill(undefined);
+    await Promise.allSettled(
+      arrayOfCars.map(async () => {
+        const name = await getRandomName();
+        const car = await ApiService.createCar({ name, color: getRandomColor() });
+        return car;
+      }),
+    );
   }
 
-  printWinnerScreen(name: string, time: number) {
+  static async generateCarView(target: HTMLElement, amount: number) {
+    target.classList.add("downloading");
+    await ControlPanel.generateCars(amount);
+    target.classList.remove("downloading");
+
+    await Garage.updateGaragePage();
+  }
+  /*
+  static printWinnerScreen(name: string, time: number) {
     const timeInSec = (time / 1000).toFixed(3);
     const raceResult = document.createElement("div");
     raceResult.className = "race-result active";
@@ -109,17 +116,16 @@ export class ControlPanel {
     document.querySelector(".header").append(raceResult);
   }
 
-  removeWinnerScreen() {
+  static removeWinnerScreen() {
     const raceResult = document.querySelector(".race-result");
     raceResult.remove();
   }
 
-  async resetAllCar() {
-    const raceSettings = this.currentPage.getRaceSettings();
-    const cars = await apiService.getCars(raceSettings.activeGaragePage, raceSettings.garageLimit);
+  static async resetAllCar() {
+    const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.garageLimit);
     cars.items.map((car: Car) => {
       const index = cars.items.indexOf(car);
-      return this.garage.carCollection[index].stopCar(car.id);
+      return Garage.carCollection[index].stopCar(car.id);
     });
     document.querySelector(`.race-all`).removeAttribute("disabled");
     document.querySelector(`.reset-all`).setAttribute("disabled", "disabled");
@@ -129,23 +135,22 @@ export class ControlPanel {
     });
   }
 
-  async race(target: HTMLElement) {
-    const raceSettings = this.currentPage.getRaceSettings();
-    const cars = await apiService.getCars(raceSettings.activeGaragePage, raceSettings.garageLimit);
+  static async race(target: HTMLElement) {
+    const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.garageLimit);
 
     if (cars.items.length >= 2) {
       blockButton("block", target);
       const promises = cars.items.map((car: Car) => {
         const index = cars.items.indexOf(car);
-        return this.garage.carCollection[index].drive(car.id);
+        return Garage.carCollection[index].drive(car.id);
       });
       await Promise.any(promises)
         .then((carResult: Winner) => {
-          this.updateWinner(carResult);
+          ControlPanel.updateWinner(carResult);
         })
         .catch(() => {
-          this.printWinnerScreen("no one", 0);
-          document.addEventListener("click", this.removeWinnerScreen, { once: true });
+          ControlPanel.printWinnerScreen("no one", 0);
+          document.addEventListener("click", ControlPanel.removeWinnerScreen, { once: true });
         });
 
       await Promise.allSettled(promises);
@@ -153,22 +158,22 @@ export class ControlPanel {
     }
   }
 
-  async updateWinner(carResult: Winner) {
-    const car = await apiService.getCar(carResult.id);
-    this.printWinnerScreen(car.name, carResult.time);
-    document.addEventListener("click", this.removeWinnerScreen, { once: true });
+  static async updateWinner(carResult: Winner) {
+    const car = await ApiService.getCar(carResult.id);
+    ControlPanel.printWinnerScreen(car.name, carResult.time);
+    document.addEventListener("click", ControlPanel.removeWinnerScreen, { once: true });
 
     try {
-      const winner = await apiService.getWinner(carResult.id);
-      let time: number;
-      carResult.time < winner.time ? (time = carResult.time) : (time = winner.time);
+      const winner = await ApiService.getWinner(carResult.id);
+      const time = carResult.time < winner.time ? carResult.time : winner.time;
+
       const data = {
         wins: winner.wins + 1,
-        time: time,
+        time,
       };
-      apiService.updateWinner(carResult.id, data);
+      ApiService.updateWinner(carResult.id, data);
     } catch (error) {
-      apiService.createWinner({
+      ApiService.createWinner({
         id: carResult.id,
         wins: 1,
         time: carResult.time,
@@ -176,54 +181,29 @@ export class ControlPanel {
     }
   }
 
-  updateCarView() {
-    const element = document.querySelector(`.active`) as HTMLElement;
-    const name = (document.querySelector(".update-name") as HTMLInputElement).value;
-    const color = (document.querySelector(".update-color") as HTMLInputElement).value;
-    apiService.updateCar(+element.dataset.num, {
-      name: name,
-      color: color,
-    });
-    const title = element.querySelector("h3");
-    title.innerHTML = name;
-    const img = element.querySelector(".car-pic");
-    img.setAttribute("fill", color);
-    element.classList.remove("active");
-    (document.querySelector(".update-name") as HTMLInputElement).value = "";
-    (document.querySelector(".update-color") as HTMLInputElement).value = "#000000";
-  }
+  */
 
-  async createCarView() {
-    const name = (document.querySelector(".create-name") as HTMLInputElement).value;
-    const color = (document.querySelector(".create-color") as HTMLInputElement).value;
-    await apiService.createCar({ name: name, color: color });
-    this.garage.updateGarage();
-  }
-
-  async removeAllCar(target: HTMLElement) {
+  static async removeAllCar(target: HTMLElement) {
     target.classList.add("downloading");
-    const cars = await apiService.getAllCars();
+    const cars = await ApiService.getAllCars();
 
     const promises = cars.map((car: Car) => {
-      return apiService.deleteCar(car.id);
+      return ApiService.deleteCar(car.id);
     });
 
     await Promise.allSettled(promises);
-    this.currentPage.updateRaceSettings("activeGaragePage", 1);
-    this.currentPage.updateRaceSettings("activeWinnersPage", 1);
-    this.garage.updateGarage();
+    Settings.activeGaragePage = 1;
+    Settings.activeWinnersPage = 1;
     target.classList.remove("downloading");
 
-    const raceSettings = this.currentPage.getRaceSettings();
-    const winners = await apiService.getWinners(
-      raceSettings.activeWinnersPage,
-      raceSettings.winnersLimit,
-      raceSettings.sort,
-      raceSettings.order,
-    );
+    const winners = await ApiService.getAllWinners();
 
-    winners.items.forEach((winner: Winner) => {
-      apiService.deleteWinner(winner.id);
+    winners.forEach(async (winner: Winner) => {
+      await ApiService.deleteWinner(winner.id);
     });
+
+    await Garage.updateGaragePage();
   }
 }
+
+export default ControlPanel;

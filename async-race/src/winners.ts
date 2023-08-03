@@ -1,126 +1,124 @@
-import { apiService } from "./api";
-import { Winner, Car, RaceSettingsTypes } from "./types";
-import { getCarImg } from "./utils";
-import { Page } from "./page";
+import { Winner, Car } from "./types";
+import ApiService from "./api";
+import Settings from "./modules/Settings";
+import Page from "./modules/Page";
 
-export class Winners {
-  order: string;
-  currentPage: Page;
-  pageNumberTitle: string;
-  title: string;
-  carsHTML: string;
-  rows: string;
+class Winners {
+  static carCollection: Car[] = [];
 
-  constructor(currentPage: Page) {
-    this.currentPage = currentPage;
-    this.initListener();
-  }
+  static allCars: Winner[] = [];
 
-  initListener() {
+  static initListener() {
     document.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
-      if (target.closest(".by-id") || target.closest(".by-wins") || target.closest(".by-time")) {
-        this.changeSort(target);
+      if (target.closest(".id") || target.closest(".wins") || target.closest(".time")) {
+        Winners.changeSortType(target);
       }
     });
   }
 
-  changeSort(target: HTMLElement) {
-    const raceSettings = this.currentPage.getRaceSettings();
-    raceSettings.sort === target.dataset.sort
-      ? this.changeOrder(raceSettings)
-      : this.currentPage.updateRaceSettings("sort", target.dataset.sort);
-
-    this.updateWinners();
+  static async getCarsAndUpdateContainer() {
+    await Winners.getCarsCollection();
+    Page.updateMainContent(Winners.content());
   }
 
-  changeOrder(raceSettings: RaceSettingsTypes) {
-    this.order = raceSettings.order === "ASC" ? "DESC" : "ASC";
-    this.currentPage.updateRaceSettings("order", this.order);
+  static changeSortType(target: HTMLElement) {
+    const { sort } = Settings;
+    if (sort === target.dataset.sort) {
+      Winners.changeOrderType();
+    } else {
+      Settings.sort = target.dataset.sort;
+    }
+
+    Winners.getCarsAndUpdateContainer();
   }
 
-  async makeWinners() {
-    const raceSettings = this.currentPage.getRaceSettings();
-    const winners = await apiService.getWinners(
-      raceSettings.activeWinnersPage,
-      raceSettings.winnersLimit,
-      raceSettings.sort,
-      raceSettings.order,
-    );
+  static changeOrderType() {
+    const { order } = Settings;
+    Settings.order = order === "ASC" ? "DESC" : "ASC";
+  }
 
-    this.pageNumberTitle = `page ${winners.pageNumber}`;
-    this.title = `garage(${winners.count})`;
-    this.rows = "";
+  static content() {
+    const tableRows = Winners.carCollection
+      .map((car) => {
+        return Winners.makeTableTr(car);
+      })
+      .join(" ");
+    return Winners.makeTable(tableRows);
+  }
 
-    const promises = winners.items.map(async (winner: Winner) => {
-      const car = await apiService.getCar(winner.id);
-      this.rows += this.makeTableTr(car, winner);
-      return car;
+  static async getCarsCollection() {
+    const { activeWinnersPage, limit, sort, order } = Settings;
+    const winners = await ApiService.getWinners(activeWinnersPage, limit.winners, sort, order);
+
+    const winnersDetailedPromises = winners.map(async (winner: Winner) => {
+      return ApiService.getCar(winner.id);
     });
 
-    await Promise.allSettled(promises);
-    this.carsHTML = this.makeTable(this.rows);
-  }
+    const winnersDetailedResponse = await Promise.allSettled(winnersDetailedPromises);
 
-  async updateWinners() {
-    document.querySelector(".container").innerHTML = "";
-
-    const raceSettings = this.currentPage.getRaceSettings();
-    const winners = await apiService.getWinners(
-      raceSettings.activeWinnersPage,
-      raceSettings.winnersLimit,
-      raceSettings.sort,
-      raceSettings.order,
-    );
-
-    this.pageNumberTitle = `page ${winners.pageNumber}`;
-    this.title = `garage(${winners.count})`;
-    this.rows = "";
-
-    document.querySelector(".page-number").innerHTML = this.pageNumberTitle;
-    document.querySelector(".count").innerHTML = this.title;
-
-    const promises = winners.items.map(async (winner: Winner) => {
-      const car = await apiService.getCar(winner.id);
-      this.rows += this.makeTableTr(car, winner);
-      return car;
+    Winners.carCollection = winnersDetailedResponse.map((winner, index) => {
+      return winner.status === "fulfilled" && Object.assign(winner.value, winners[index]);
     });
-
-    await Promise.allSettled(promises);
-    this.carsHTML = this.makeTable(this.rows);
-    document.querySelector(".container").innerHTML = this.carsHTML;
-    (document.querySelector(`#by-${winners.sort}`) as HTMLInputElement).setAttribute("checked", "checked");
   }
 
-  makeTable(content: string) {
+  static async getAllCars() {
+    const allCars = await ApiService.getAllWinners();
+    Winners.allCars = allCars;
+    return allCars;
+  }
+
+  static makeTable(content: string) {
     return `<table class="winners-table">
   <tr>
-    <th class="by-id" >
-      <input type="radio" id="by-id" name="sort" value="by-id" /> <label for="by-id" data-sort="id">Number</label>
+    <th class="id" >
+      <input type="radio" id="id" name="sort" value="id" ${
+        Settings.sort === "id" ? "checked" : ""
+      } /> <label for="id" data-sort="id">Number</label>
     </th>
     <th>Car</th>
     <th>Name</th>
-    <th class="by-wins" data-sort="wins">
-      <input type="radio" id="by-wins" name="sort" value="by-wins" /> <label for="by-wins" data-sort="wins">Wins</label>
+    <th class="wins" data-sort="wins">
+      <input type="radio" id="wins" name="sort" value="wins" ${
+        Settings.sort === "wins" ? "checked" : ""
+      } /> <label for="wins" data-sort="wins">Wins</label>
     </th>
-    <th class="by-time" data-sort="time">
-      <input type="radio" id="by-time" name="sort" value="by-time" /> <label for="by-time" data-sort="time">Best time (s)</label>
+    <th class="time" data-sort="time">
+      <input type="radio" id="time" name="sort" value="time" ${
+        Settings.sort === "time" ? "checked" : ""
+      } /> <label for="time" data-sort="time">Best time (s)</label>
     </th>
   </tr>
   ${content}
 </table>`;
   }
 
-  makeTableTr(car: Car, winner: Winner) {
-    const timeInSec = (winner.time / 1000).toFixed(3);
+  static makeTableTr(car: Car) {
+    const { time, id, name, wins, color } = car;
+    const timeInSec = (time / 1000).toFixed(3);
     return `
   <tr>
-    <td>${car.id}</td>
-    <td>${getCarImg(car.color, car.id)}</td>
-    <td>${car.name}</td>
-    <td>${winner.wins}</td>
+    <td>${id}</td>
+    <td>${Page.getCarImg(color, id)}</td>
+    <td>${name}</td>
+    <td>${wins}</td>
     <td>${timeInSec}</td>
   </tr>
 `;
   }
+
+  static async updateWinnersPage() {
+    await Winners.getAllCars();
+    const totalAmountOfPages = Settings.checkAmountOfPages("winners", Winners.allCars);
+    if (totalAmountOfPages < Settings.activeWinnersPage) {
+      Settings.activeWinnersPage = totalAmountOfPages;
+    }
+    const { activeWinnersPage } = Settings;
+    await Winners.getCarsAndUpdateContainer();
+    Page.updateTotalCarsNumber(Winners.allCars);
+    Page.updatePageNumber(activeWinnersPage, totalAmountOfPages);
+    Page.togglePaginationButtons(activeWinnersPage === 1, activeWinnersPage === totalAmountOfPages);
+  }
 }
+
+export default Winners;

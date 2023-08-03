@@ -1,12 +1,30 @@
-import { CarsPage, Car, WinnersPage, Winner } from "./types";
+import { Car, Winner } from "./types";
 
 class ApiService {
   static link = "http://127.0.0.1:3000";
 
+  static async getCarsNames() {
+    const response = await fetch(`./assets/jsons/carNames.json`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const cars = await response.json();
+      return cars as { [x: string]: string[] };
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
+  }
+
   static async getAllCars() {
     const response = await fetch(`${ApiService.link}/garage`);
-    const allCars = (await response.json()) as Car[];
-    return allCars;
+    if (response.ok) {
+      const allCars = await response.json();
+      return allCars as Car[];
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async createCar(data: Car = {}) {
@@ -17,38 +35,57 @@ class ApiService {
       },
       body: JSON.stringify(data),
     });
-    const car = (await response.json()) as Car;
-    return car;
+
+    if (response.ok) {
+      const car = (await response.json()) as Car;
+      return car;
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async deleteCar(id: number) {
     const response = await fetch(`${ApiService.link}/garage/${id}`, {
       method: "DELETE",
     });
-    return response.json();
+
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async deleteWinner(id: number) {
     const response = await fetch(`${ApiService.link}/winners/${id}`, {
       method: "DELETE",
     });
-    return response.json();
+
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async changeDriveMode(id: number, status: "started" | "stopped" | "drive") {
     const response = await fetch(`${ApiService.link}/engine?id=${id}&status=${status}`, {
       method: "PATCH",
     });
-    const car = await response.json();
-    return car;
+
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async getCar(id: number) {
     const response = await fetch(`${ApiService.link}/garage/${id}`, {
       method: "GET",
     });
-    const car = (await response.json()) as Car;
-    return car;
+
+    if (response.ok) {
+      const car = await response.json();
+      return car as Car;
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async updateCar(id: number, data: Car = {}) {
@@ -59,20 +96,23 @@ class ApiService {
       },
       body: JSON.stringify(data),
     });
-    const car = (await response.json()) as Car;
-    return car;
+
+    if (response.ok) {
+      const car = await response.json();
+      return car as Car;
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async getCars(page = 1, limit = 7) {
     const response = await fetch(`${ApiService.link}/garage?_page=${page}&_limit=${limit}`, {
       method: "GET",
     });
-    return {
-      items: await response.json(),
-      count: response.headers.get("X-Total-Count"),
-      pageNumber: page,
-      pageLimit: Math.ceil(+response.headers.get("X-Total-Count") / limit),
-    } as CarsPage;
+    if (response.ok) {
+      const cars = await response.json();
+      return cars as Car[];
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async getWinners(page = 1, limit = 10, sort = "id", order = "ASC") {
@@ -83,14 +123,23 @@ class ApiService {
       },
     );
 
-    return {
-      items: await response.json(),
-      count: response.headers.get("X-Total-Count"),
-      pageNumber: page,
-      sort,
-      order,
-      pageLimit: Math.ceil(+response.headers.get("X-Total-Count") / limit),
-    } as WinnersPage;
+    if (response.ok) {
+      const winners = await response.json();
+      return winners as Winner[];
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
+  }
+
+  static async getAllWinners() {
+    const response = await fetch(`${ApiService.link}/winners`, {
+      method: "GET",
+    });
+
+    if (response.ok) {
+      const winners = await response.json();
+      return winners as Winner[];
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async createWinner(data: Winner = {}) {
@@ -101,8 +150,12 @@ class ApiService {
       },
       body: JSON.stringify(data),
     });
-    const car = (await response.json()) as Winner;
-    return car;
+
+    if (response.ok) {
+      const car = await response.json();
+      return car as Winner;
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async updateWinner(id: number, data: Winner = {}) {
@@ -113,8 +166,12 @@ class ApiService {
       },
       body: JSON.stringify(data),
     });
-    const car = (await response.json()) as Winner;
-    return car;
+
+    if (response.ok) {
+      const car = await response.json();
+      return car as Winner;
+    }
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 
   static async getWinner(id: number) {
@@ -125,11 +182,11 @@ class ApiService {
       },
     });
 
-    if (response.status === 200) {
-      const car = (await response.json()) as Winner;
-      return car;
+    if (response.ok) {
+      const car = await response.json();
+      return car as Winner;
     }
-    return undefined;
+    throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
   }
 }
 

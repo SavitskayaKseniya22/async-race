@@ -1,69 +1,51 @@
-import { apiService } from "./api";
-import { CarModel } from "./car";
 import { Car } from "./types";
-import { isDiff } from "./utils";
-import { Page } from "./page";
+import ApiService from "./api";
+import Settings from "./modules/Settings";
+import Track from "./modules/Track";
+import Page from "./modules/Page";
 
-export class Garage {
-  carCollection: CarModel[];
-  carCollectionNew: CarModel[];
-  car: CarModel;
-  currentPage: Page;
-  pageNumber: HTMLHeadingElement;
-  count: HTMLHeadingElement;
-  carsHTML: string;
-  title: string;
-  pageNumberTitle: string;
+class Garage {
+  static carCollection: Car[] = [];
 
-  constructor(currentPage: Page) {
-    this.car = new CarModel({ name: "TEST", color: "#000000", id: 5000 });
-    this.car.initListener(this);
-    this.currentPage = currentPage;
+  static allCars: Car[] = [];
+
+  static async getCarsAndUpdateContainer() {
+    await Garage.getCarsCollection();
+    Page.updateMainContent(Garage.content());
   }
 
-  async makeGarage() {
-    const raceSettings = this.currentPage.getRaceSettings();
-    const cars = await apiService.getCars(raceSettings.activeGaragePage, raceSettings.garageLimit);
-
-    this.pageNumberTitle = `page ${cars.pageNumber}`;
-    this.title = `garage(${cars.count})`;
-
-    this.carCollection = [];
-    this.carsHTML = "";
-
-    if (cars.items.length > 0) {
-      cars.items.forEach((car: Car) => {
-        const carItem = new CarModel(car);
-        this.carCollection.push(carItem);
-        this.carsHTML += carItem.makeCar();
-      });
-    }
+  static content() {
+    return Garage.carCollection
+      .map((car) => {
+        return Track.content(car);
+      })
+      .join(" ");
   }
 
-  async updateGarage() {
-    const raceSettings = this.currentPage.getRaceSettings();
-    const cars = await apiService.getCars(raceSettings.activeGaragePage, raceSettings.garageLimit);
+  static async getCarsCollection() {
+    const { limit, activeGaragePage } = Settings;
+    const response = await ApiService.getCars(activeGaragePage, limit.garage);
+    Garage.carCollection = response;
+  }
 
-    this.carCollectionNew = [];
+  static async getAllCars() {
+    const allCars = await ApiService.getAllCars();
+    Garage.allCars = allCars;
+    return allCars;
+  }
 
-    this.pageNumberTitle = `page ${cars.pageNumber}`;
-    this.title = `garage(${cars.count})`;
-    document.querySelector(".page-number").innerHTML = this.pageNumberTitle;
-    document.querySelector(".count").innerHTML = this.title;
-
-    this.carsHTML = "";
-    cars.items.forEach((car: Car) => {
-      const carItem = new CarModel(car);
-      this.carCollectionNew.push(carItem);
-    });
-
-    if (isDiff(this.carCollection, this.carCollectionNew)) {
-      this.carCollection = this.carCollectionNew;
-      this.carCollection.forEach((car: Car) => {
-        const carItem = new CarModel(car);
-        this.carsHTML += carItem.makeCar();
-      });
-      document.querySelector(".container").innerHTML = this.carsHTML;
+  static async updateGaragePage() {
+    await Garage.getAllCars();
+    const totalAmountOfPages = Settings.checkAmountOfPages("garage", Garage.allCars);
+    if (totalAmountOfPages < Settings.activeGaragePage) {
+      Settings.activeGaragePage = totalAmountOfPages;
     }
+    const { activeGaragePage } = Settings;
+    await Garage.getCarsAndUpdateContainer();
+    Page.updateTotalCarsNumber(Garage.allCars);
+    Page.updatePageNumber(activeGaragePage, totalAmountOfPages);
+    Page.togglePaginationButtons(activeGaragePage === 1, activeGaragePage === totalAmountOfPages);
   }
 }
+
+export default Garage;

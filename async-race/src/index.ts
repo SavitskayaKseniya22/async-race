@@ -1,12 +1,50 @@
+import CarModel from "./car";
+import ControlPanel from "./controlPanel";
+import Garage from "./garage";
+import Page from "./modules/Page";
 import Settings from "./modules/Settings";
 import Pagination from "./pagination";
+import Winners from "./winners";
 
 class App {
   static addListener() {
+    Winners.initListener();
+    Pagination.initListener();
+    ControlPanel.initListener();
+    CarModel.initListener();
+
+    window.addEventListener("load", async () => {
+      const location = window.location.hash.replace("#", "");
+      if (location.length === 0) {
+        window.location.href = "#garage";
+      }
+      if (location === "garage" || location === "winners") {
+        Settings.activePage = location;
+        Page.toggleNavigationButtons(location);
+        Page.updateTitle(location);
+        ControlPanel.updateDisability(location);
+
+        if (location === "garage") {
+          await Garage.updateGaragePage();
+        } else {
+          await Winners.updateWinnersPage();
+        }
+      }
+    });
+
     window.addEventListener("hashchange", async () => {
       const location = window.location.hash.replace("#", "");
       if (location === "garage" || location === "winners") {
         Settings.activePage = location;
+        Page.toggleNavigationButtons(location);
+        Page.updateTitle(location);
+        ControlPanel.updateDisability(location);
+
+        if (location === "garage") {
+          await Garage.updateGaragePage();
+        } else {
+          await Winners.updateWinnersPage();
+        }
       }
     });
   }
@@ -15,18 +53,18 @@ class App {
     return `
     <header class="header">
     <h1>Async race</h1>
-    <ul class="navigation">
+    ${ControlPanel.content()}
+    <nav class="navigation">
       <a href="./#garage" id="to-garage" class="to-garage button">to garage</a>
-      <a href="./#winners" id="to-winners" class="to-winners button" >to winners</a>
-    </ul>
-    <h2 class="count">${Settings.activePage}<span>(${1})</span></h2>
+      <a href="./#winners" id="to-winners" class="to-winners button">to winners</a>
+    </nav>
+    <h2 class="count"><span class="page__title"></span><span class="page__cars-total"></span></h2>
     </header>
       <main>
-
       </main>
       <nav>
       ${Pagination.content()}
-      <h3 class="page-number">Page: <span>${Settings.checkActivePage()}</span></h3>
+      <h3 class="page-number">Page: <span class="current"></span>/<span class="total"></span></h3>
       </nav>
        <footer class="footer">
     <div>
