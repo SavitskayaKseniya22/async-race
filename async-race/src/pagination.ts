@@ -5,19 +5,17 @@ import Winners from "./winners";
 class Pagination {
   static initListener() {
     document.addEventListener("click", (e) => {
-      if ((e.target as HTMLElement).closest(".pagination")) {
-        const target = e.target as HTMLElement;
-        if (target.className === "prev-page") {
-          Pagination.switchToDifferentPageNumber("decrease");
-        } else if (target.className === "next-page") {
-          Pagination.switchToDifferentPageNumber("increase");
-        }
+      const target = e.target as HTMLElement;
+      if (target.className === "prev-page") {
+        Pagination.switchToDifferentPageNumber("decrease");
+      } else if (target.className === "next-page") {
+        Pagination.switchToDifferentPageNumber("increase");
       }
     });
   }
 
   static content() {
-    return `<ul class="buttons-container pagination">
+    return `<ul class="buttons-container">
     <li><button class="prev-page">Prev</button></li>
     <li><button class="next-page">Next</button></li> 
   </ul>`;

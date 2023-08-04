@@ -2,7 +2,7 @@
 @import url("https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css");
 
 html {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 * {
@@ -10,10 +10,15 @@ html {
 }
 
 ul,
+h1,
 h2,
 h3 {
   padding: 0;
   margin: 0;
+}
+
+h1 {
+  margin-bottom: 1rem;
 }
 
 li {
@@ -57,13 +62,14 @@ input:checked + label {
 
 input:disabled + label,
 button:disabled {
-  background-color: gray;
-  cursor: not-allowed;
+  opacity: 0.2;
+  pointer-events: none;
 }
 
 input:disabled + label:hover,
 button:disabled:hover {
-  background-color: gray;
+  pointer-events: none;
+  opacity: 0.2;
 }
 
 li {
@@ -93,8 +99,7 @@ button:hover,
 
 .disabled {
   pointer-events: none;
-  background-color: gray;
-  cursor: not-allowed;
+  opacity: 0.2;
 }
 
 body {
@@ -108,71 +113,61 @@ body {
   transition: 2s;
 }
 
+nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+}
+
 .header {
-  min-height: 180px;
   padding: 1em;
   position: relative;
   background-color: #457b9d;
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-end;
-  column-gap: 0.5rem;
+  gap: 1rem;
 
   .navigation {
     position: absolute;
-    display: flex;
-    column-gap: 0.5rem;
-    left: 1rem;
-    top: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .count {
-    order: -1;
+    left: 0;
+    top: 0;
   }
 
   .control-panel {
     display: flex;
     flex-direction: column;
-    row-gap: 0.5rem;
-    column-gap: 0.5rem;
+    gap: 0.5rem;
     max-width: 685px;
-    flex-wrap: wrap;
-
-    & > * {
-      display: flex;
-      justify-content: space-between;
-      flex-grow: 1;
-    }
 
     input[type="text"] {
-      flex-grow: 1;
+      flex-grow: 2;
       max-width: 460px;
     }
 
-    .create-confirm,
-    .update-confirm {
+    .control-panel__creating_confirm,
+    .control-panel__updating_confirm {
       width: 150px;
     }
   }
 }
 
-.main {
+.race-all {
+  background-color: #e63946;
+}
+
+main {
   padding: 0.5rem;
   display: flex;
-  row-gap: 1rem;
-  flex-grow: 1;
+  flex-grow: 22;
   justify-content: flex-start;
-  flex-wrap: wrap;
-  column-gap: 2rem;
-  align-items: flex-end;
+  flex-direction: column;
 }
 
 .buttons-container {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem;
 }
 
 .race-result {
@@ -192,62 +187,52 @@ body {
   }
 }
 
-.container {
+.car {
+  background-color: #f1faee;
+  padding: 0 0.5rem;
+  border-bottom: 3px dashed #457b9d;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 2rem;
+  row-gap: 1rem;
   width: 100%;
-  align-self: flex-start;
+  min-height: 100px;
+  align-items: center;
 
-  .car {
-    background-color: #f1faee;
-    padding: 1rem;
-    border-bottom: 3px dashed #457b9d;
-    display: flex;
-    flex-wrap: wrap;
-    column-gap: 2rem;
-    row-gap: 0.5rem;
+  &.active {
+    background-color: white;
+  }
+  h3 {
+    width: 300px;
+  }
+
+  .car__track {
     width: 100%;
-    min-height: 100px;
-    align-items: center;
-
-    &.active {
-      background-color: white;
+    display: flex;
+    align-items: flex-end;
+    margin: 0 3rem 0 1rem;
+    position: relative;
+    height: 20px;
+    font-size: 2rem;
+    justify-content: space-between;
+    i {
+      display: block;
     }
-    h3 {
-      width: 300px;
-    }
 
-    .track {
-      width: 100%;
-      display: flex;
-      align-items: flex-end;
-      margin: 0 3rem 0 1rem;
+    .car__pic-animation {
       position: relative;
-      height: 20px;
+      animation-name: drive;
+      animation-fill-mode: forwards;
+      animation-direction: normal;
+    }
 
-      .banner-pic {
-        position: absolute;
-        width: 2rem;
-        left: calc(100% - 3rem);
-      }
-      .car-pic {
-        width: 3rem;
-        position: absolute;
+    @keyframes drive {
+      from {
         left: 0;
-        bottom: -30px;
-      }
-      .car-pic-animation {
-        animation-name: drive;
-        animation-fill-mode: forwards;
-        animation-direction: normal;
       }
 
-      @keyframes drive {
-        from {
-          left: 0;
-        }
-
-        to {
-          left: calc(100% - 3rem);
-        }
+      to {
+        left: calc(100% - 3rem);
       }
     }
   }
@@ -257,10 +242,9 @@ table {
   border-collapse: separate;
   text-align: center;
   width: 60%;
-  margin: auto;
-
-  .car-pic {
-    width: 3rem;
+  margin: 2rem auto;
+  .car__pic {
+    font-size: 1.5rem;
   }
 }
 
@@ -272,30 +256,32 @@ th {
 
 td {
   background: #f1faee;
+  padding: 0.5rem;
 }
 
-.by-id,
-.by-wins,
-.by-time {
+.id,
+.wins,
+.time {
   cursor: pointer;
   label {
     width: 100%;
     height: 100%;
     margin: 0;
     border: none;
-    padding: 10px 20px;
+    border-radius: 0;
+    padding: 1rem;
   }
 }
 
-.by-id:hover,
-.by-wins:hover,
-.by-time:hover {
+.id:hover,
+.wins:hover,
+.time:hover {
   background-color: #e63946;
 }
 
 .footer {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   padding: 1em;
   align-items: center;
   background-color: #457b9d;

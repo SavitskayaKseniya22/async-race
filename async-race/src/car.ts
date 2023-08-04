@@ -6,57 +6,57 @@ import Page from "./modules/Page";
 
 class CarModel {
   static async drive(id: number) {
+    CarModel.unsetAnimation(id);
+    const car = await ApiService.changeDriveMode(id, "started");
+    CarModel.toggleEngineButtons("start", id);
+    CarModel.setAnimation(id, car);
+
     try {
-      CarModel.unsetAnimation(id);
-      const car = await ApiService.changeDriveMode(id, "started");
-      CarModel.updateEngineButton("start", id);
-      CarModel.setAnimation(id, car);
       await ApiService.changeDriveMode(id, "drive");
       return { id, time: getTime(car.velocity, car.distance) };
     } catch (error) {
-      CarModel.pauseCar(id);
-      throw new Error();
-    } finally {
-      CarModel.updateEngineButton("stop", id);
+      console.log(error);
+      CarModel.pause(id);
+      throw new Error(error as string);
     }
   }
 
-  static async pauseCar(id: number) {
+  static async pause(id: number) {
     await ApiService.changeDriveMode(id, "stopped");
-    const carImg = document.querySelector(`.car-pic.car-pic${id}`) as HTMLImageElement;
+    const carImg = document.querySelector(`.car__pic.car__pic${id}`) as HTMLElement;
     if (carImg) {
       carImg.style.animationPlayState = "paused";
     }
   }
 
-  static async stopCar(id: number) {
+  static async stop(id: number) {
     CarModel.unsetAnimation(id);
-    CarModel.updateEngineButton("stop", id);
+    CarModel.toggleEngineButtons("stop", id);
     await ApiService.changeDriveMode(id, "stopped");
   }
 
   static unsetAnimation(id: number) {
-    const carImg = document.querySelector(`.car-pic.car-pic${id}`) as HTMLImageElement;
+    const carImg = document.querySelector(`.car__pic.car__pic${id}`) as HTMLElement;
     if (carImg) {
-      carImg.classList.remove("car-pic-animation");
+      carImg.classList.remove("car__pic-animation");
       carImg.style.animationDuration = "unset";
       carImg.style.animationPlayState = "unset";
     }
   }
 
   static setAnimation(id: number, car: Engine) {
-    const carImg = document.querySelector(`.car-pic.car-pic${id}`) as HTMLElement;
+    const carImg = document.querySelector(`.car__pic.car__pic${id}`) as HTMLElement;
     if (carImg) {
       const time = getTime(car.velocity, car.distance);
-      carImg.classList.add("car-pic-animation");
+      carImg.classList.add("car__pic-animation");
       carImg.style.animationDuration = `${time}ms`;
       carImg.style.animationPlayState = "running";
     }
   }
 
-  static updateEngineButton(button: "start" | "stop", id: number) {
-    const start = document.querySelector(`#start-engine${id}`) as HTMLInputElement;
-    const stop = document.querySelector(`#stop-engine${id}`) as HTMLInputElement;
+  static toggleEngineButtons(button: "start" | "stop", id: number) {
+    const start = document.querySelector(`#car__start_${id}`) as HTMLInputElement;
+    const stop = document.querySelector(`#car__stop_${id}`) as HTMLInputElement;
     if (start && stop) {
       if (button === "start") {
         start.disabled = true;
@@ -68,8 +68,8 @@ class CarModel {
   }
 
   static async create() {
-    const name = (document.querySelector(".create-name") as HTMLInputElement).value;
-    const color = (document.querySelector(".create-color") as HTMLInputElement).value;
+    const name = (document.querySelector(".control-panel__creating_name") as HTMLInputElement).value;
+    const color = (document.querySelector(".control-panel__creating_color") as HTMLInputElement).value;
     await ApiService.createCar({ name, color });
     await Garage.updateGaragePage();
   }
@@ -90,8 +90,8 @@ class CarModel {
   }
 
   static async select(target: HTMLElement) {
-    const nameInput = document.querySelector(".update-name");
-    const colorInput = document.querySelector(".update-color");
+    const nameInput = document.querySelector(".control-panel__updating_name");
+    const colorInput = document.querySelector(".control-panel__updating_color");
     const selectId = Page.getID(target);
     if (
       selectId &&
@@ -109,14 +109,14 @@ class CarModel {
         activeElement.classList.remove("active");
       });
       element.classList.add("active");
-      document.querySelector(".update-confirm").removeAttribute("disabled");
+      document.querySelector(".control-panel__updating_confirm").removeAttribute("disabled");
     }
   }
 
   static async update() {
     const element = document.querySelector(`.active`);
-    const nameInput = document.querySelector(".update-name");
-    const colorInput = document.querySelector(".update-color");
+    const nameInput = document.querySelector(".control-panel__updating_name");
+    const colorInput = document.querySelector(".control-panel__updating_color");
     if (
       element &&
       nameInput &&
@@ -134,7 +134,7 @@ class CarModel {
       });
       const title = element.querySelector("h3");
       title.textContent = nameValue;
-      const img = element.querySelector(".car-pic");
+      const img = element.querySelector(".car__pic");
       img.setAttribute("style", `color:${colorValue}`);
       element.classList.remove("active");
       nameInput.value = "";
@@ -147,14 +147,23 @@ class CarModel {
       const { target } = event;
 
       if (target instanceof HTMLElement) {
-        if (target.closest(".removeCar")) {
+        if (target.closest(".car__remove")) {
           CarModel.remove(target);
-        } else if (target.closest(".startEngine")) {
-          CarModel.drive(Page.getID(target));
-        } else if (target.closest(".stopEngine")) {
-          CarModel.stopCar(Page.getID(target));
+        } else if (target.closest(".car__start")) {
+          const id = Page.getID(target);
+          CarModel.drive(id)
+            .then(() => {
+              console.log(`The car №${id} has reached the finish line.`);
+            })
+            .catch(() => {
+              console.log(`The car №${id} broke down`);
+            });
+        } else if (target.closest(".car__stop")) {
+          const id = Page.getID(target);
+          CarModel.stop(id);
           target.setAttribute("disabled", "true");
-        } else if (target.closest(".selectCar")) {
+          CarModel.toggleEngineButtons("stop", id);
+        } else if (target.closest(".car__select")) {
           CarModel.select(target);
         }
       }

@@ -6,13 +6,13 @@ class Track {
     return `<div class="car" data-num=${id}>
     <h3>${name}</h3>
     <ul class="buttons-container">
-      <li><button class="selectCar">Select</button></li>
-      <li><button class="removeCar">Remove</button></li>
-      <li><button id="start-engine${id}" class="startEngine">Start</button></li>
-      <li><button id="stop-engine${id}" class="stopEngine" disabled>Reset</button></li>
+      <li><button class="car__select">Select</button></li>
+      <li><button class="car__remove">Remove</button></li>
+      <li><button id="car__start_${id}" class="car__start">Start</button></li>
+      <li><button id="car__stop_${id}" class="car__stop" disabled>Reset</button></li>
     </ul>
-    <div class="track">
-    <i style="color:${color};" class="fa-solid fa-car-side car-pic car-pic${id}"></i>
+    <div class="car__track">
+    <i style="color:${color};" class="fa-solid fa-car-side car__pic car__pic${id}"></i>
     <i class="fa-solid fa-flag"></i>
     </div>
   </div>`;

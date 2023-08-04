@@ -56,13 +56,13 @@ class Page {
   }
 
   static getCarImg(color: string, id: number) {
-    return `<i style="color:${color};" class="fa-solid fa-car-side car-pic car-pic${id}"></i>`;
+    return `<i style="color:${color};" class="fa-solid fa-car-side car__pic car__pic${id}"></i>`;
   }
 
   static blockButton(state: "block" | "unblock", target: HTMLElement) {
     const buttonsHead = document.querySelectorAll(".header button");
     const buttonsPag = document.querySelectorAll(".pagination button");
-    const buttonsDel = document.querySelectorAll(".removeCar");
+    const buttonsDel = document.querySelectorAll(".car__remove");
 
     const buttons = Array.from(buttonsHead).concat(Array.from(buttonsPag)).concat(Array.from(buttonsDel));
 
@@ -81,7 +81,7 @@ class Page {
       });
       document.querySelector(`.to-winners`).classList.remove("disabled");
       target.setAttribute("disabled", "disabled");
-      document.querySelector(`.update-confirm`).setAttribute("disabled", "disabled");
+      document.querySelector(`.control-panel__updating_confirm`).setAttribute("disabled", "disabled");
     }
   }
 

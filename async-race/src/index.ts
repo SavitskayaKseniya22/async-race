@@ -52,13 +52,14 @@ class App {
   static content() {
     return `
     <header class="header">
+    <h2><span class="page__title"></span><span class="page__cars-total"></span></h2>
     <h1>Async race</h1>
     ${ControlPanel.content()}
-    <nav class="navigation">
+    <nav class="navigation buttons-container">
       <a href="./#garage" id="to-garage" class="to-garage button">to garage</a>
       <a href="./#winners" id="to-winners" class="to-winners button">to winners</a>
     </nav>
-    <h2 class="count"><span class="page__title"></span><span class="page__cars-total"></span></h2>
+   
     <div class="race-result"></div>
     </header>
       <main>
@@ -70,7 +71,7 @@ class App {
        <footer class="footer">
     <div>
       <a href="https://rs.school/js/" target="_blank">
-        <img src="./assets/images/rs-school-js.svg" alt="link" width="100" />
+        <img src="./assets/images/rs-school-js.svg" alt="link" width="60" />
       </a>
     </div>
     <div>

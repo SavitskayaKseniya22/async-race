@@ -13,7 +13,7 @@ class ControlPanel {
       async (event) => {
         const { target } = event;
         if (target instanceof HTMLInputElement) {
-          if (target.classList.contains("create-name") && target.value === "") {
+          if (target.classList.contains("control-panel__creating_name") && target.value === "") {
             let carNames: { [x: string]: string[] } | undefined;
             try {
               carNames = await ApiService.getCarsNames();
@@ -23,7 +23,7 @@ class ControlPanel {
               target.value = getRandomName(carNames);
             }
           }
-          if (target.classList.contains("create-color")) {
+          if (target.classList.contains("control-panel__creating_color")) {
             target.value = getRandomColor();
           }
         }
@@ -35,11 +35,11 @@ class ControlPanel {
       const { target } = event;
       event.preventDefault();
       if (target instanceof HTMLElement) {
-        if (target.classList.contains("create")) {
+        if (target.classList.contains("control-panel__creating")) {
           CarModel.create();
         } else if (target.classList.contains("update")) {
           CarModel.update();
-          document.querySelector(".update-confirm").setAttribute("disabled", "disabled");
+          document.querySelector(".control-panel__updating_confirm").setAttribute("disabled", "disabled");
         }
       }
     });
@@ -47,7 +47,7 @@ class ControlPanel {
     document.addEventListener("click", (event) => {
       const { target } = event;
       if (target instanceof HTMLButtonElement) {
-        if (target.closest(".create-color")) {
+        if (target.closest(".control-panel__creating_color")) {
           target.value = getRandomColor();
         } else if (target.closest(".generate-cars")) {
           ControlPanel.generateCarView(target, 100);
@@ -64,17 +64,17 @@ class ControlPanel {
 
   static content() {
     return `<div class="control-panel">
-    <form action="" class="create">
-      <input class="create-name" type="text" required placeholder="Enter car name"   />
-      <input class="create-color" type="color" />
-      <button type="submit" value="Create" class="create-confirm">Create</button>
+    <form action="" class="control-panel__creating buttons-container">
+      <input class="control-panel__creating_name" type="text" required placeholder="Enter car name"   />
+      <input class="control-panel__creating_color" type="color" />
+      <button type="submit" value="Create" class="control-panel__creating_confirm">Create</button>
     </form>
-    <form action="" class="update">
-      <input class="update-name" type="text" required placeholder="Change car name"  />
-      <input class="update-color" type="color" />
-      <button type="submit" value="Update" class="update-confirm" disabled>Update</button>
+    <form action="" class="update buttons-container">
+      <input class="control-panel__updating_name" type="text" required placeholder="Change car name"  />
+      <input class="control-panel__updating_color" type="color" />
+      <button type="submit" value="Update" class="control-panel__updating_confirm" disabled>Update</button>
     </form>
-    <ul>
+    <ul class="buttons-container">
       <li><button class="race-all">Race</button></li>
       <li><button class="reset-all" disabled>Reset</button></li>
       <li><button class="remove-all">Remove cars</button></li>
@@ -128,17 +128,20 @@ class ControlPanel {
         return Object.assign(car, data);
       });
 
-      await Promise.any(promises)
+      Promise.any(promises)
         .then((carResult) => {
           ControlPanel.updateWinner(carResult);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.log(error);
           ControlPanel.printWinnerScreen("no one", 0);
           document.addEventListener("click", ControlPanel.removeWinnerScreen, { once: true });
         });
 
-      await Promise.allSettled(promises);
-      Page.blockButton("unblock", target);
+      Promise.allSettled(promises).then(() => {
+        Page.blockButton("unblock", target);
+        console.log("Race is over!");
+      });
     }
   }
 
@@ -166,12 +169,12 @@ class ControlPanel {
   static async resetAllCar() {
     const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.limit.garage);
     cars.map((car: Car) => {
-      return CarModel.stopCar(car.id);
+      return CarModel.stop(car.id);
     });
 
     document.querySelector(`.race-all`).removeAttribute("disabled");
     document.querySelector(`.reset-all`).setAttribute("disabled", "disabled");
-    const stopEngines = document.querySelectorAll(".stopEngine");
+    const stopEngines = document.querySelectorAll(".car__stop");
     stopEngines.forEach((element) => {
       element.setAttribute("disabled", "disabled");
     });
