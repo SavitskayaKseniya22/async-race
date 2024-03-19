@@ -1,26 +1,24 @@
-import { Car, Winner } from "../types";
+import { CarListType, PageType, WinnersOrderType, WinnersSortType } from "../types";
 
 class Settings {
-  static activePage: "garage" | "winners" = "garage";
+  static activePage: PageType = PageType.GARAGE;
 
   static activeGaragePage = 1;
 
   static activeWinnersPage = 1;
 
-  static order = "ASC";
+  static order: WinnersOrderType = WinnersOrderType.ASC;
 
-  static sort = "id";
+  static sort: WinnersSortType = WinnersSortType.ID;
 
   static limit = {
     winners: 10,
     garage: 7,
   };
 
-  static checkAmountOfPages(activePage: "garage" | "winners", allCars: Car[] | Winner[]) {
+  static checkAmountOfPages(activePage: PageType, allCars: CarListType) {
     return Math.ceil(allCars.length / Settings.limit[activePage]) || 1;
   }
 }
 
 export default Settings;
-// static order: "DESC" | "ASC" = "ASC";
-// static sort: "id" | "wins" | "time" = "id";

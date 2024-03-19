@@ -1,8 +1,8 @@
 /* eslint-disable consistent-return */
-import { Car, Winner } from "./types";
+import { Car, CarStatusType, Winner, WinnersOrderType, WinnersSortType } from "./types";
 
 class ApiService {
-  static link = "http://127.0.0.1:3000";
+  static link = "https://async-race-json-server-vercel.vercel.app";
 
   static async getCarsNames() {
     try {
@@ -15,8 +15,7 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const cars = await response.json();
-      return cars as { [x: string]: string[] };
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
@@ -28,14 +27,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const cars = await response.json();
-      return cars as Car[];
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async createCar(data: Car = {}) {
+  static async createCar(data: Car) {
     try {
       const response = await fetch(`${ApiService.link}/garage`, {
         method: "POST",
@@ -47,8 +45,7 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car as Car;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
@@ -62,8 +59,7 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
@@ -77,14 +73,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async changeDriveMode(id: number, status: "started" | "stopped" | "drive") {
+  static async changeDriveMode(id: number, status: CarStatusType) {
     const response = await fetch(`${ApiService.link}/engine?id=${id}&status=${status}`, {
       method: "PATCH",
     });
@@ -104,14 +99,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car as Car;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async updateCar(id: number, data: Car = {}) {
+  static async updateCar(id: number, data: Car) {
     try {
       const response = await fetch(`${ApiService.link}/garage/${id}`, {
         method: "PUT",
@@ -123,14 +117,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car as Car;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async getCars(page = 1, limit = 7) {
+  static async getCars(page: number, limit: number) {
     try {
       const response = await fetch(`${ApiService.link}/garage?_page=${page}&_limit=${limit}`, {
         method: "GET",
@@ -138,14 +131,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const cars = await response.json();
-      return cars as Car[];
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async getWinners(page = 1, limit = 10, sort = "id", order = "ASC") {
+  static async getWinners(page: number, limit: number, sort: WinnersSortType, order: WinnersOrderType) {
     try {
       const response = await fetch(
         `${ApiService.link}/winners?_page=${page}&_limit=${limit}&_sort=${sort}&_order=${order}`,
@@ -156,8 +148,7 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const winners = await response.json();
-      return winners as Winner[];
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
@@ -171,14 +162,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const winners = await response.json();
-      return winners as Winner[];
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async createWinner(data: Winner = {}) {
+  static async createWinner(data: Winner) {
     try {
       const response = await fetch(`${ApiService.link}/winners`, {
         method: "POST",
@@ -190,14 +180,13 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car as Winner;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
   }
 
-  static async updateWinner(id: number, data: Winner = {}) {
+  static async updateWinner(id: number, data: Winner) {
     try {
       const response = await fetch(`${ApiService.link}/winners/${id}`, {
         method: "PUT",
@@ -209,8 +198,7 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car as Winner;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }
@@ -227,8 +215,7 @@ class ApiService {
       if (!response.ok) {
         throw new Error(`Something went wrong! ${response.status}: ${response.statusText}`);
       }
-      const car = await response.json();
-      return car as Winner;
+      return await response.json();
     } catch (error) {
       console.error(error);
     }

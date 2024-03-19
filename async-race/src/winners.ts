@@ -1,4 +1,4 @@
-import { Winner, Car } from "./types";
+import { Winner, Car, PageType, WinnersSortType, WinnersOrderType } from "./types";
 import ApiService from "./api";
 import Settings from "./modules/Settings";
 import Page from "./modules/Page";
@@ -30,7 +30,11 @@ class Winners {
     const targetSort = target.getAttribute("data-sort");
     if (sort === targetSort) {
       Winners.changeOrderType();
-    } else {
+    } else if (
+      targetSort === WinnersSortType.ID ||
+      targetSort === WinnersSortType.TIME ||
+      targetSort === WinnersSortType.WINS
+    ) {
       Settings.sort = targetSort;
     }
 
@@ -39,7 +43,7 @@ class Winners {
 
   static changeOrderType() {
     const { order } = Settings;
-    Settings.order = order === "ASC" ? "DESC" : "ASC";
+    Settings.order = order === WinnersOrderType.ASC ? WinnersOrderType.DESC : WinnersOrderType.ASC;
   }
 
   static content() {
@@ -77,19 +81,19 @@ class Winners {
   <tr>
     <th class="id" >
       <input type="radio" id="id" name="sort" value="id" ${
-        Settings.sort === "id" ? "checked" : ""
+        Settings.sort === WinnersSortType.ID ? "checked" : ""
       } /> <label for="id" data-sort="id">Number</label>
     </th>
     <th>Car</th>
     <th>Name</th>
     <th class="wins" data-sort="wins">
       <input type="radio" id="wins" name="sort" value="wins" ${
-        Settings.sort === "wins" ? "checked" : ""
+        Settings.sort === WinnersSortType.WINS ? "checked" : ""
       } /> <label for="wins" data-sort="wins">Wins</label>
     </th>
     <th class="time" data-sort="time">
       <input type="radio" id="time" name="sort" value="time" ${
-        Settings.sort === "time" ? "checked" : ""
+        Settings.sort === WinnersSortType.TIME ? "checked" : ""
       } /> <label for="time" data-sort="time">Best time (s)</label>
     </th>
   </tr>
@@ -113,7 +117,7 @@ class Winners {
 
   static async updateWinnersPage() {
     await Winners.getAllCars();
-    const totalAmountOfPages = Settings.checkAmountOfPages("winners", Winners.allCars);
+    const totalAmountOfPages = Settings.checkAmountOfPages(PageType.WINNERS, Winners.allCars);
     if (totalAmountOfPages < Settings.activeWinnersPage) {
       Settings.activeWinnersPage = totalAmountOfPages;
     }

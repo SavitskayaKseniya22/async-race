@@ -4,6 +4,7 @@ import Garage from "./garage";
 import Page from "./modules/Page";
 import Settings from "./modules/Settings";
 import Pagination from "./pagination";
+import { PageType } from "./types";
 import Winners from "./winners";
 
 class App {
@@ -18,13 +19,13 @@ class App {
       if (location.length === 0) {
         window.location.href = "#garage";
       }
-      if (location === "garage" || location === "winners") {
+      if (location === PageType.GARAGE || location === PageType.WINNERS) {
         Settings.activePage = location;
         Page.toggleNavigationButtons(location);
         Page.updateTitle(location);
         ControlPanel.updateDisability(location);
 
-        if (location === "garage") {
+        if (location === PageType.GARAGE) {
           await Garage.updateGaragePage();
         } else {
           await Winners.updateWinnersPage();
@@ -34,13 +35,13 @@ class App {
 
     window.addEventListener("hashchange", async () => {
       const location = window.location.hash.replace("#", "");
-      if (location === "garage" || location === "winners") {
+      if (location === PageType.GARAGE || location === PageType.WINNERS) {
         Settings.activePage = location;
         Page.toggleNavigationButtons(location);
         Page.updateTitle(location);
         ControlPanel.updateDisability(location);
 
-        if (location === "garage") {
+        if (location === PageType.GARAGE) {
           await Garage.updateGaragePage();
         } else {
           await Winners.updateWinnersPage();

@@ -3,7 +3,7 @@ import CarModel from "./car";
 import Garage from "./garage";
 import Page from "./modules/Page";
 import Settings from "./modules/Settings";
-import { Car, Winner } from "./types";
+import { ButtonActionType, Car, CarsNamesJSONType, PageType, Winner } from "./types";
 import { getRandomName, getRandomColor } from "./utils";
 
 class ControlPanel {
@@ -14,7 +14,7 @@ class ControlPanel {
         const { target } = event;
         if (target instanceof HTMLInputElement) {
           if (target.classList.contains("control-panel__creating_name") && target.value === "") {
-            let carNames: { [x: string]: string[] } | undefined;
+            let carNames: CarsNamesJSONType | undefined;
             try {
               carNames = await ApiService.getCarsNames();
             } catch (error) {
@@ -83,9 +83,9 @@ class ControlPanel {
   </div>`;
   }
 
-  static updateDisability(activePage: "garage" | "winners") {
+  static updateDisability(activePage: PageType) {
     const panel = document.querySelector(".control-panel");
-    if (activePage === "garage") {
+    if (activePage === PageType.GARAGE) {
       panel.classList.remove("disabled");
     } else {
       panel.classList.add("disabled");
@@ -94,7 +94,7 @@ class ControlPanel {
 
   static async generateCars(amount: number) {
     const arrayOfCars = new Array(amount).fill(undefined);
-    let carNames: { [x: string]: string[] } | undefined;
+    let carNames: CarsNamesJSONType | undefined;
     try {
       carNames = await ApiService.getCarsNames();
     } catch (error) {
@@ -113,7 +113,6 @@ class ControlPanel {
     target.classList.add("downloading");
     await ControlPanel.generateCars(amount);
     target.classList.remove("downloading");
-
     await Garage.updateGaragePage();
   }
 
@@ -121,7 +120,7 @@ class ControlPanel {
     const cars = await ApiService.getCars(Settings.activeGaragePage, Settings.limit.garage);
 
     if (cars.length >= 2) {
-      Page.blockButton("block", target);
+      Page.blockButton(ButtonActionType.BLOCK, target);
 
       const promises = cars.map(async (car: Car) => {
         const data = await CarModel.drive(car.id);
@@ -139,7 +138,7 @@ class ControlPanel {
         });
 
       Promise.allSettled(promises).then(() => {
-        Page.blockButton("unblock", target);
+        Page.blockButton(ButtonActionType.UNBLOCK, target);
         console.log("Race is over!");
       });
     }
@@ -187,7 +186,7 @@ class ControlPanel {
 
     try {
       const winners = await ApiService.getAllWinners();
-      const winner = winners.filter((car) => {
+      const winner = winners.filter((car: Winner) => {
         return car.id === id;
       });
       if (winner.length) {

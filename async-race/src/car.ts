@@ -1,5 +1,5 @@
 import { getTime } from "./utils";
-import { Engine } from "./types";
+import { CarActionType, CarStatusType, Engine, Winner } from "./types";
 import ApiService from "./api";
 import Garage from "./garage";
 import Page from "./modules/Page";
@@ -7,12 +7,12 @@ import Page from "./modules/Page";
 class CarModel {
   static async drive(id: number) {
     CarModel.unsetAnimation(id);
-    const car = await ApiService.changeDriveMode(id, "started");
-    CarModel.toggleEngineButtons("start", id);
+    const car = await ApiService.changeDriveMode(id, CarStatusType.STARTED);
+    CarModel.toggleEngineButtons(CarActionType.START, id);
     CarModel.setAnimation(id, car);
 
     try {
-      await ApiService.changeDriveMode(id, "drive");
+      await ApiService.changeDriveMode(id, CarStatusType.DRIVE);
       return { id, time: getTime(car.velocity, car.distance) };
     } catch (error) {
       console.log(error);
@@ -22,7 +22,7 @@ class CarModel {
   }
 
   static async pause(id: number) {
-    await ApiService.changeDriveMode(id, "stopped");
+    await ApiService.changeDriveMode(id, CarStatusType.STOPPED);
     const carImg = document.querySelector(`.car__pic.car__pic${id}`) as HTMLElement;
     if (carImg) {
       carImg.style.animationPlayState = "paused";
@@ -31,8 +31,8 @@ class CarModel {
 
   static async stop(id: number) {
     CarModel.unsetAnimation(id);
-    CarModel.toggleEngineButtons("stop", id);
-    await ApiService.changeDriveMode(id, "stopped");
+    CarModel.toggleEngineButtons(CarActionType.STOP, id);
+    await ApiService.changeDriveMode(id, CarStatusType.STOPPED);
   }
 
   static unsetAnimation(id: number) {
@@ -54,11 +54,11 @@ class CarModel {
     }
   }
 
-  static toggleEngineButtons(button: "start" | "stop", id: number) {
+  static toggleEngineButtons(action: CarActionType, id: number) {
     const start = document.querySelector(`#car__start_${id}`) as HTMLInputElement;
     const stop = document.querySelector(`#car__stop_${id}`) as HTMLInputElement;
     if (start && stop) {
-      if (button === "start") {
+      if (action === CarActionType.START) {
         start.disabled = true;
         stop.disabled = false;
       } else {
@@ -79,7 +79,7 @@ class CarModel {
     await ApiService.deleteCar(removeId);
 
     const winners = await ApiService.getAllWinners();
-    const isItInWinners = winners.some((car) => {
+    const isItInWinners = winners.some((car: Winner) => {
       return car.id === removeId;
     });
     if (isItInWinners) {
@@ -162,7 +162,7 @@ class CarModel {
           const id = Page.getID(target);
           CarModel.stop(id);
           target.setAttribute("disabled", "true");
-          CarModel.toggleEngineButtons("stop", id);
+          CarModel.toggleEngineButtons(CarActionType.STOP, id);
         } else if (target.closest(".car__select")) {
           CarModel.select(target);
         }

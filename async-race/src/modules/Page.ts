@@ -1,4 +1,4 @@
-import { Car, Winner } from "../types";
+import { ButtonActionType, CarListType, PageType } from "../types";
 
 class Page {
   static updatePageNumber(pageNumber: number, totalAmountOfPages: number) {
@@ -8,20 +8,20 @@ class Page {
     total.textContent = String(totalAmountOfPages);
   }
 
-  static updateTitle(activePage: "garage" | "winners") {
+  static updateTitle(activePage: PageType) {
     const titleContainer = document.querySelector(".page__title");
     titleContainer.textContent = activePage;
   }
 
-  static async updateTotalCarsNumber(allCars: Car[] | Winner[]) {
+  static async updateTotalCarsNumber(allCars: CarListType) {
     const carsTotalContainer = document.querySelector(".page__cars-total");
     carsTotalContainer.textContent = `(${allCars.length})`;
   }
 
-  static toggleNavigationButtons(activePage: "garage" | "winners") {
+  static toggleNavigationButtons(activePage: PageType) {
     const navToGarage = document.querySelector(`.to-garage`);
     const navToWinners = document.querySelector(`.to-winners`);
-    if (activePage === "garage") {
+    if (activePage === PageType.GARAGE) {
       navToGarage.classList.add("disabled");
       navToWinners.classList.remove("disabled");
     } else {
@@ -59,14 +59,14 @@ class Page {
     return `<i style="color:${color};" class="fa-solid fa-car-side car__pic car__pic${id}"></i>`;
   }
 
-  static blockButton(state: "block" | "unblock", target: HTMLElement) {
+  static blockButton(action: ButtonActionType, target: HTMLElement) {
     const buttonsHead = document.querySelectorAll(".header button");
     const buttonsPag = document.querySelectorAll(".pagination button");
     const buttonsDel = document.querySelectorAll(".car__remove");
 
     const buttons = Array.from(buttonsHead).concat(Array.from(buttonsPag)).concat(Array.from(buttonsDel));
 
-    if (state === "block") {
+    if (action === ButtonActionType.BLOCK) {
       target.classList.add("downloading");
       document.querySelector(`.to-winners`).classList.add("disabled");
 

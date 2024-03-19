@@ -1,5 +1,6 @@
 import Garage from "./garage";
 import Settings from "./modules/Settings";
+import { PageType } from "./types";
 import Winners from "./winners";
 
 class Pagination {
@@ -21,23 +22,27 @@ class Pagination {
   </ul>`;
   }
 
-  static updateCount(operation: string, prop: "activeGaragePage" | "activeWinnersPage", pageNumber: number) {
+  static updateCount(
+    operation: "decrease" | "increase",
+    prop: "activeGaragePage" | "activeWinnersPage",
+    pageNumber: number,
+  ) {
     Settings[prop] = operation === "decrease" ? pageNumber - 1 : pageNumber + 1;
     return Settings[prop];
   }
 
-  static async switchToDifferentPageNumber(operation: string) {
+  static async switchToDifferentPageNumber(operation: "decrease" | "increase") {
     const { activeGaragePage, activeWinnersPage, activePage } = Settings;
 
     const totalAmountOfPages =
-      activePage === "garage"
-        ? Settings.checkAmountOfPages("garage", Garage.allCars)
-        : Settings.checkAmountOfPages("winners", Winners.allCars);
+      activePage === PageType.GARAGE
+        ? Settings.checkAmountOfPages(PageType.GARAGE, Garage.allCars)
+        : Settings.checkAmountOfPages(PageType.WINNERS, Winners.allCars);
 
-    const pageNumber = activePage === "garage" ? activeGaragePage : activeWinnersPage;
+    const pageNumber = activePage === PageType.GARAGE ? activeGaragePage : activeWinnersPage;
 
     if ((pageNumber > 1 && operation === "decrease") || (operation === "increase" && pageNumber < totalAmountOfPages)) {
-      if (activePage === "garage") {
+      if (activePage === PageType.GARAGE) {
         Pagination.updateCount(operation, "activeGaragePage", activeGaragePage);
         await Garage.updateGaragePage();
       } else {

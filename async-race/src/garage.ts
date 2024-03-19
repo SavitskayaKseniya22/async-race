@@ -1,4 +1,4 @@
-import { Car } from "./types";
+import { Car, PageType } from "./types";
 import ApiService from "./api";
 import Settings from "./modules/Settings";
 import Track from "./modules/Track";
@@ -36,7 +36,7 @@ class Garage {
 
   static async updateGaragePage() {
     await Garage.getAllCars();
-    const totalAmountOfPages = Settings.checkAmountOfPages("garage", Garage.allCars);
+    const totalAmountOfPages = Settings.checkAmountOfPages(PageType.GARAGE, Garage.allCars);
     if (totalAmountOfPages < Settings.activeGaragePage) {
       Settings.activeGaragePage = totalAmountOfPages;
     }
